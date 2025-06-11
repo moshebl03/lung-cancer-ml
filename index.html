@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lung Cancer Risk Predictor</title>
+
+    <!-- Google Font: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <style>
+        :root {
+            /* "Black" color palette */
+            --color-bg-dark: #0a0a0a;
+            --color-surface: #1a1a1a;
+            --color-primary: #e5e7eb;
+            --color-primary-dark: #f9fafb;
+            --color-text-primary: #F9FAFB;
+            --color-text-secondary: #9CA3AF;
+            --color-border: #333333;
+            --color-success: #10B981;
+            --color-danger: #EF4444;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+        }
+
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: var(--color-bg-dark);
+            color: var(--color-text-primary);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            /* Adjusted max-width for a better vertical appearance */
+            max-width: 700px; 
+            background-color: var(--color-surface);
+            border-radius: 1rem;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow);
+            display: flex;
+            overflow: hidden;
+            /* Flex direction is now always column */
+            flex-direction: column;
+        }
+
+        .form-section {
+            padding: 2.5rem;
+            width: 100%;
+            box-sizing: border-box;
+            /* Ensure it is below the result section */
+            order: 2;
+        }
+        
+        .result-section {
+            padding: 2.5rem;
+            width: 100%;
+            background: linear-gradient(145deg, #222222, #000000);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-sizing: border-box;
+            /* Changed from border-left to border-bottom */
+            border-bottom: 1px solid var(--color-border);
+            /* Reduced min-height as it is no longer a sidebar */
+            min-height: 200px;
+            /* Ensure it is above the form section */
+            order: 1;
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--color-text-primary);
+        }
+
+        .subtitle {
+            color: var(--color-text-secondary);
+            margin-bottom: 2rem;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (min-width: 640px) {
+            .form-grid { grid-template-columns: 1fr 1fr; }
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--color-text-secondary);
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background-color: var(--color-bg-dark);
+            color: var(--color-text-primary);
+        }
+        .form-group .radio-group { display: flex; gap: 1.5rem; align-items: center; height: 100%;}
+        .form-group input[type="radio"] { width: auto; }
+
+        .submit-btn {
+            width: 100%;
+            background-color: var(--color-surface);
+            color: var(--color-primary);
+            font-weight: 600;
+            padding: 0.875rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s, border-color 0.2s;
+            margin-top: 1.5rem;
+        }
+        .submit-btn:hover {
+            background-color: var(--color-bg-dark);
+            border-color: var(--color-primary);
+        }
+        .submit-btn:disabled { background-color: #2a2a2a; color: #666; border-color: #333; cursor: not-allowed; }
+        .submit-btn:active { transform: scale(0.98); }
+
+        #result-content { min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center;}
+        .result-display .risk-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .result-display .risk-label {
+            font-size: 1rem;
+            color: var(--color-text-secondary);
+            margin-top: 0.75rem;
+        }
+        .text-success { color: var(--color-success) !important; text-shadow: 0 0 10px #10b98180; }
+        .text-danger { color: var(--color-danger) !important; text-shadow: 0 0 10px #ef444480; }
+        
+        .loader {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: inline-block;
+            border-top: 4px solid #FFF;
+            border-right: 4px solid transparent;
+            box-sizing: border-box;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- RESULT SECTION (Now appears first) -->
+        <div class="result-section">
+            <div id="result-content">
+                <div class="result-placeholder">
+                    <h2 style="margin-bottom: 1rem; font-weight: 500;">Prediction Result</h2>
+                    <p style="color: #9CA3AF;">Your risk assessment will appear here.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORM SECTION (Now appears second) -->
+        <div class="form-section">
+            <h1>Lung Cancer Predictor</h1>
+            <p class="subtitle">Enter patient information to assess cancer risk.</p>
+            
+            <form id="risk-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" value="60" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="days_to_cancer">Days to Diagnosis (if applicable)</label>
+                        <input type="number" id="days_to_cancer" name="days_to_cancer" value="0" required />
+                    </div>
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="gender" value="Male" checked /> Male</label>
+                            <label><input type="radio" name="gender" value="Female" /> Female</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="race">Race</label>
+                        <select id="race" name="race">
+                            {% for option in race_options %}
+                                <option value="{{ option }}">{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="smoker">Smoker Status</label>
+                        <select id="smoker" name="smoker">
+                            {% for option in smoker_options %}
+                                <option value="{{ option }}">{{ option }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-button" class="submit-btn">Analyze Risk</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC (Unchanged) -->
+    <script>
+        const form = document.getElementById('risk-form');
+        const submitButton = document.getElementById('submit-button');
+        const resultContent = document.getElementById('result-content');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); 
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'Analyzing...';
+            resultContent.innerHTML = '<div class="loader"></div>';
+
+            const formData = new FormData(form);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                if (key === 'age' || key === 'days_to_cancer') {
+                    data[key] = Number(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                let resultText = "Low Risk";
+                let resultClass = "text-success";
+                if (result.has_cancer === 1) {
+                    resultText = "High Risk";
+                    resultClass = "text-danger";
+                }
+
+                resultContent.innerHTML = `
+                    <div class="result-display">
+                        <div class="risk-text ${resultClass}">${resultText}</div>
+                        <div class="risk-label">Predicted Outcome</div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Prediction error:', error);
+                resultContent.innerHTML = `
+                    <div class="result-placeholder">
+                        <p style="color: #fca5a5; font-weight: 500;">Error</p>
+                        <p style="font-size: 0.8rem; color: #fecaca;">Could not get a prediction. Please try again.</p>
+                    </div>
+                `;
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Analyze Risk';
+            }
+        });
+    </script>
+</body>
+</html>
